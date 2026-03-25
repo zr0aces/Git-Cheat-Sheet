@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Visual Cheat Sheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            -webkit-font-smoothing: antialiased;
+        }
+        .code-font { font-family: 'Fira Code', monospace; }
+        
+        .glass {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: #f97316;
+            background: rgba(30, 41, 59, 0.8);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -10px rgba(249, 115, 22, 0.2);
+        }
+
+        .tab-active {
+            color: #f97316;
+            border-bottom: 2px solid #f97316;
+            background: rgba(249, 115, 22, 0.05);
+        }
+
+        @media (min-width: 768px) {
+            .workflow-step:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                top: 28px;
+                right: -50%;
+                width: 100%;
+                height: 1px;
+                background: linear-gradient(90deg, #334155 0%, transparent 100%);
+                z-index: 0;
+            }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .copy-toast {
+            transform: translate(-50%, 20px);
+            transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .copy-toast.show { transform: translate(-50%, -20px); opacity: 1; }
+
+        .param-highlight {
+            color: #fb923c;
+            font-weight: 700;
+        }
+
+        @keyframes pulse-once {
+            0% { background-color: rgba(249, 115, 22, 0); }
+            50% { background-color: rgba(249, 115, 22, 0.2); }
+            100% { background-color: rgba(249, 115, 22, 0); }
+        }
+        .pulse-copy { animation: pulse-once 0.4s ease-out; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div id="toast" class="copy-toast fixed bottom-10 left-1/2 opacity-0 z-50 bg-orange-600 text-white px-6 py-3 rounded-2xl shadow-2xl font-semibold flex items-center gap-3 pointer-events-none">
+        <div class="bg-white/20 p-1 rounded-lg text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        Copied to clipboard
+    </div>
+
+    <header class="max-w-6xl mx-auto pt-12 pb-8 px-6 text-center">
+        <h1 class="text-4xl md:text-6xl font-black mb-4 tracking-tight bg-gradient-to-br from-orange-400 via-orange-500 to-amber-600 bg-clip-text text-transparent">
+            Git Cheat Sheet
+        </h1>
+        <p class="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-10 font-medium">
+            Professional workflow automation & recovery guide.
+        </p>
+
+        <!-- Parameter Builder -->
+        <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+            <div class="relative group">
+                <span class="absolute left-4 top-1 text-[10px] font-bold text-orange-500 uppercase tracking-widest opacity-70 text-left">Branch Name</span>
+                <input type="text" id="branchParam" placeholder="e.g. feat/login" 
+                    class="w-full bg-slate-800/40 border border-slate-700/50 rounded-xl px-4 pt-5 pb-2 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all text-sm font-semibold text-white">
+            </div>
+            <div class="relative group">
+                <span class="absolute left-4 top-1 text-[10px] font-bold text-orange-500 uppercase tracking-widest opacity-70 text-left">File/Path</span>
+                <input type="text" id="fileParam" placeholder="e.g. src/App.js" 
+                    class="w-full bg-slate-800/40 border border-slate-700/50 rounded-xl px-4 pt-5 pb-2 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all text-sm font-semibold text-white">
+            </div>
+            <div class="relative group">
+                <span class="absolute left-4 top-1 text-[10px] font-bold text-orange-500 uppercase tracking-widest opacity-70 text-left">Commit Type</span>
+                <select id="commitType" class="w-full bg-slate-800/40 border border-slate-700/50 rounded-xl px-4 pt-5 pb-2 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all text-sm font-semibold text-white appearance-none">
+                    <option value="feat">feat: New Feature</option>
+                    <option value="fix">fix: Bug Fix</option>
+                    <option value="docs">docs: Documentation</option>
+                    <option value="style">style: Formatting</option>
+                    <option value="refactor">refactor: Code Change</option>
+                    <option value="chore">chore: Maintenance</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Interactive Workflow -->
+        <div class="glass rounded-[2rem] p-8 md:p-10 mb-12 border border-white/5 shadow-2xl">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-4 relative">
+                <div class="workflow-step relative flex flex-col items-center z-10 group">
+                    <button onclick="copyToClipboard('git pull'); setTab('Remote')" class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-orange-400 group-hover:border-orange-500 group-hover:text-orange-300 group-hover:scale-110 transition-all mb-4 shadow-2xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </button>
+                    <span class="text-[11px] font-black text-slate-500 tracking-[0.2em] uppercase mb-1">1. Pull</span>
+                    <code class="text-xs text-orange-500/90 font-mono font-bold">Remote Sync</code>
+                </div>
+                <div class="workflow-step relative flex flex-col items-center z-10">
+                    <div class="w-16 h-16 rounded-2xl bg-slate-800/30 border border-slate-700/30 flex items-center justify-center text-slate-600 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-500 tracking-[0.2em] uppercase mb-1">2. Code</span>
+                    <span class="text-xs text-slate-700 font-mono font-bold">Local Edits</span>
+                </div>
+                <div class="workflow-step relative flex flex-col items-center z-10 group">
+                    <button onclick="copyToClipboard('git add .'); setTab('Daily')" class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-orange-400 group-hover:border-orange-500 group-hover:text-orange-300 group-hover:scale-110 transition-all mb-4 shadow-2xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                    </button>
+                    <span class="text-[11px] font-black text-slate-500 tracking-[0.2em] uppercase mb-1">3. Add</span>
+                    <code class="text-xs text-orange-500/90 font-mono font-bold">Stage Files</code>
+                </div>
+                <div class="workflow-step relative flex flex-col items-center z-10 group">
+                    <button onclick="copyToClipboard('git commit -m \'Update\''); setTab('Daily')" class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-orange-400 group-hover:border-orange-500 group-hover:text-orange-300 group-hover:scale-110 transition-all mb-4 shadow-2xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    </button>
+                    <span class="text-[11px] font-black text-slate-500 tracking-[0.2em] uppercase mb-1">4. Commit</span>
+                    <code class="text-xs text-orange-500/90 font-mono font-bold">Save Point</code>
+                </div>
+                <div class="workflow-step relative flex flex-col items-center z-10 group">
+                    <button onclick="copyToClipboard('git push'); setTab('Remote')" class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-orange-400 group-hover:border-orange-500 group-hover:text-orange-300 group-hover:scale-110 transition-all mb-4 shadow-2xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </button>
+                    <span class="text-[11px] font-black text-slate-500 tracking-[0.2em] uppercase mb-1">5. Push</span>
+                    <code class="text-xs text-orange-500/90 font-mono font-bold">Sync Cloud</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Search -->
+        <div class="relative max-w-2xl mx-auto">
+            <input type="text" id="searchInput" placeholder="Search for a command... (Press '/' to focus)" 
+                class="w-full bg-slate-800/40 border border-slate-700/50 rounded-2xl px-14 py-4 focus:outline-none focus:ring-4 focus:ring-orange-500/20 transition-all text-lg placeholder:text-slate-600 font-medium text-white">
+            <svg class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 pb-32">
+        <nav class="flex overflow-x-auto border-b border-slate-800/50 mb-10 no-scrollbar scroll-smooth gap-2" id="tabNav"></nav>
+        <div id="commandsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]"></div>
+    </main>
+
+    <script>
+        const gitData = [
+            {
+                category: "Setup",
+                icon: '🛠️',
+                commands: [
+                    { cmd: "git init", desc: "Initialize repository", example: "git init" },
+                    { cmd: "git clone <url>", desc: "Clone remote project", example: "git clone https://github.com/user/project.git" },
+                    { cmd: "git config --global user.name 'Name'", desc: "Set identity name", example: "git config --global user.name 'John Doe'" },
+                ]
+            },
+            {
+                category: "Daily",
+                icon: '⚡',
+                commands: [
+                    { cmd: "git status", desc: "Check project status", example: "git status" },
+                    { cmd: "git add <file>", desc: "Stage a specific file", example: "git add [file]" },
+                    { cmd: "git add .", desc: "Stage all modifications", example: "git add ." },
+                    { cmd: "git commit -m 'msg'", desc: "Commit staged work", example: "git commit -m '[type]: update [file]'" },
+                    { cmd: "git log --oneline", desc: "View history log", example: "git log --oneline" },
+                ]
+            },
+            {
+                category: "Branching",
+                icon: '🌿',
+                commands: [
+                    { cmd: "git switch -c <name>", desc: "Create & Switch branch", example: "git switch -c [branch]" },
+                    { cmd: "git switch <name>", desc: "Switch to branch", example: "git switch [branch]" },
+                    { cmd: "git branch", desc: "List local branches", example: "git branch" },
+                    { cmd: "git merge <branch>", desc: "Merge into current", example: "git merge [branch]" },
+                ]
+            },
+            {
+                category: "Cleanup",
+                icon: '🧹',
+                commands: [
+                    { cmd: "git branch --merged", desc: "Find merged branches", example: "git branch --merged" },
+                    { cmd: "git fetch --prune", desc: "Sync remote removals", example: "git fetch --all --prune" },
+                    { cmd: "git push origin --delete <name>", desc: "Kill remote branch", example: "git push origin --delete [branch]" },
+                    { cmd: "git clean -fd", desc: "Nuke untracked items", example: "git clean -fd" }
+                ]
+            },
+            {
+                category: "Rescue",
+                icon: '🚑',
+                commands: [
+                    { cmd: "git restore <file>", desc: "Discard file edits", example: "git restore [file]" },
+                    { cmd: "git reset --soft HEAD~1", desc: "Undo last commit", example: "git reset --soft HEAD~1" },
+                    { cmd: "git commit --amend", desc: "Fix last commit", example: "git commit --amend -m '[type]: fixed [file] issue'" },
+                    { cmd: "git stash", desc: "Hide work temporarily", example: "git stash push -m 'WIP: working on [file]'" },
+                    { cmd: "git stash pop", desc: "Restore stashed work", example: "git stash pop" }
+                ]
+            },
+            {
+                category: "Scenarios",
+                icon: '💡',
+                commands: [
+                    { cmd: "Wrong Branch!", desc: "I committed to wrong branch", example: "git reset HEAD~1 --soft && git stash && git switch [branch] && git stash pop" },
+                    { cmd: "Forgot file!", desc: "I forgot a file in my commit", example: "git add [file] && git commit --amend --no-edit" },
+                    { cmd: "Un-Track!", desc: "Stop tracking a file (keep it)", example: "git rm --cached [file]" },
+                    { cmd: "Save Point", desc: "Quickly save everything", example: "git add . && git commit -m 'chore: [branch] save point'" }
+                ]
+            }
+        ];
+
+        // State
+        let activeTab = localStorage.getItem('gitTab') || 'All';
+        const searchInput = document.getElementById('searchInput');
+        const branchParam = document.getElementById('branchParam');
+        const fileParam = document.getElementById('fileParam');
+        const commitType = document.getElementById('commitType');
+        const commandsGrid = document.getElementById('commandsGrid');
+        const tabNav = document.getElementById('tabNav');
+        const toast = document.getElementById('toast');
+
+        // Initial Load
+        branchParam.value = localStorage.getItem('gitBranch') || '';
+        fileParam.value = localStorage.getItem('gitFile') || '';
+        commitType.value = localStorage.getItem('gitType') || 'feat';
+
+        function copyToClipboard(text, elementId = null) {
+            const processedText = processExample(text);
+            const el = document.createElement('textarea');
+            el.value = processedText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            // Visual feedback
+            if(elementId) {
+                const card = document.getElementById(elementId);
+                card.classList.add('pulse-copy');
+                setTimeout(() => card.classList.remove('pulse-copy'), 400);
+            }
+
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function processExample(text) {
+            const b = branchParam.value || 'main';
+            const f = fileParam.value || 'index.html';
+            const t = commitType.value || 'feat';
+            return text
+                .replace(/\[branch\]/g, b)
+                .replace(/\[file\]/g, f)
+                .replace(/\[type\]/g, t);
+        }
+
+        function highlightParams(text) {
+            const b = branchParam.value || 'main';
+            const f = fileParam.value || 'index.html';
+            const t = commitType.value || 'feat';
+            return text
+                .replace(/\[branch\]/g, `<span class="param-highlight">${b}</span>`)
+                .replace(/\[file\]/g, `<span class="param-highlight">${f}</span>`)
+                .replace(/\[type\]/g, `<span class="param-highlight">${t}</span>`);
+        }
+
+        function renderTabs() {
+            const categories = ['All', ...gitData.map(d => d.category)];
+            tabNav.innerHTML = categories.map(cat => `
+                <button onclick="setTab('${cat}')" class="px-5 py-3 text-[10px] font-black tracking-[0.15em] uppercase whitespace-nowrap transition-all rounded-xl ${activeTab === cat ? 'tab-active' : 'text-slate-500 hover:text-slate-300'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function setTab(tab) {
+            activeTab = tab;
+            localStorage.setItem('gitTab', tab);
+            renderTabs();
+            renderCommands();
+            // Scroll to top of results if manually switching
+            window.scrollTo({ top: document.querySelector('header').offsetHeight - 50, behavior: 'smooth' });
+        }
+
+        function renderCommands() {
+            const query = searchInput.value.toLowerCase();
+            let html = '';
+
+            localStorage.setItem('gitBranch', branchParam.value);
+            localStorage.setItem('gitFile', fileParam.value);
+            localStorage.setItem('gitType', commitType.value);
+
+            gitData.forEach((cat, catIdx) => {
+                if (activeTab !== 'All' && activeTab !== cat.category) return;
+
+                cat.commands.forEach((c, cmdIdx) => {
+                    const isMatch = c.cmd.toLowerCase().includes(query) || c.desc.toLowerCase().includes(query) || cat.category.toLowerCase().includes(query);
+                    const cardId = `card-${catIdx}-${cmdIdx}`;
+                    
+                    if (isMatch) {
+                        const rawEx = processExample(c.example);
+                        const displayEx = highlightParams(c.example);
+                        html += `
+                            <div id="${cardId}" class="glass-card rounded-[1.5rem] p-6 flex flex-col group animate-in slide-in-from-bottom-2 fade-in duration-300">
+                                <div class="flex-grow">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <code class="code-font text-orange-400 font-bold text-sm bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-xl cursor-pointer hover:bg-orange-500/20 transition-all" onclick="copyToClipboard('${c.cmd}', '${cardId}')">
+                                            ${c.cmd}
+                                        </code>
+                                        <span class="text-xl grayscale group-hover:grayscale-0 transition-all duration-300 opacity-40 group-hover:opacity-100">${cat.icon}</span>
+                                    </div>
+                                    <h3 class="font-extrabold text-slate-100 text-base mb-1 text-left">${c.desc}</h3>
+                                    ${activeTab === 'All' ? `<p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-4 text-left">${cat.category}</p>` : '<div class="mb-4"></div>'}
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5 relative group/example">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Live Snippet</span>
+                                            <button onclick="copyToClipboard('${rawEx}', '${cardId}')" class="text-slate-500 hover:text-orange-400 transition-colors p-1" title="Copy Command">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                            </button>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-300 code-font break-all leading-relaxed text-left">${displayEx}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            });
+
+            commandsGrid.innerHTML = html || `<div class="col-span-full py-24 text-center text-slate-600 font-bold tracking-tight text-xl">No match for "${searchInput.value}"</div>`;
+        }
+
+        // Search focus shortcut
+        window.addEventListener('keydown', (e) => {
+            const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+            if (e.key === '/' && !isTyping) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+
+        [searchInput, branchParam, fileParam, commitType].forEach(el => el.addEventListener('input', renderCommands));
+
+        // Start
+        renderTabs();
+        renderCommands();
+    </script>
+</body>
+</html>
